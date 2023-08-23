@@ -4,7 +4,7 @@ from pypdf import PdfReader
 import random
 import re
 
-class TextCleaner(object):
+class TextProcessor (object):
 
     def __init__(self) -> None:
         pass
@@ -24,6 +24,11 @@ class TextCleaner(object):
         clean_text = self.remove_tabs(clean_text)
 
         return clean_text
+    
+    def sent_tokenizer(self, text) -> list:
+        # Split text into sentences using punctuation, spaces and upper case letters
+        sentences = re.split(r'(?<=[.!?•])\s+(?=[A-Z])', text)
+        return sentences
 
 class TextExtractor(object):
     

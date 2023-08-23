@@ -5,7 +5,7 @@ Extract data from input resume such email, phone, number, work experience, educa
 
 import re
 import spacy
-from utils import TextCleaner
+from utils import TextProcessor
 
 # Load the English model
 nlp = spacy.load("en_core_web_lg")
@@ -148,7 +148,7 @@ REGEX_PATTERNS = {
     "email_pattern": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
     "phone_pattern": r"\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}",
     "link_pattern": r"\b(?:https?://|www\.)\S+\b",
-    "date_pattern": r"(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s\d{4}|\d{1,2}[ /\.-]\d{4}|present|current|Present|Current)",
+    "date_pattern": r"(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s\d{4}|\d{1,2}[ /\.-]\d{4}|Present|Current|to current|to present)",
     "experience_pattern": r"(Professional|Work|Internship|Volunteer|Volunteering|Leadership|Research|Teaching|PROFESSIONAL|WORK|INTERNSHIP|VOLUNTEER|VOLUNTEERING|LEADERSHIP|RESEARCH|TEACHING)\s+(Experience|experience|EXPERIENCE|Expertise|expertise|EXPERTISE|History|history|HISTORY|Activities|activities|ACTIVITIES)",
     "skills_pattern": r"(Technical|Summary|Hard|TECHNICAL|SUMMARY|HARD)(?: of|OF)? (Proficiencies|Qualifications|Expertise|Skills|SKILLS|PROFICIENCIES|QUALIFICATIONS|EXPERTISE)"
     }
@@ -170,8 +170,9 @@ class Profile(object):
         self.tokens = re.split(r"\n| {4,}", self.text)
         
         self.key = key
-        self.cleaner = TextCleaner()
-        
+        self.cleaner = TextProcessor()
+
+
     def get_emails(self):
         """
         Extract email addresses from a given string using RegEx.
@@ -285,7 +286,7 @@ class Profile(object):
         return False
 
 
-    def get_section(self, section = None):
+    def get_section(self, section = None) -> list:
         """
         Extract experience from raw resume using multiple logics.
 
@@ -325,42 +326,69 @@ class Profile(object):
                     # Found section
                     is_section = True
 
-        details = " ".join(details)
+        return " ".join(details)
 
-        if section == 'experience':
-            # Extract dates
-            # for item in details:
-            date = self.__get_position_year(details)
-                # if date:
-            print(date)
-            
+    def get_experience(self):
+        """
+        Extract experience from raw resume using multiple logics.
+
+        Returns:
+            str: 
+        """
+
+        text = self.get_section(section='experience')
+        sentences = self.cleaner.sent_tokenizer(text)
+        details = {}
+        is_date  = False
+        for sentence in sentences:
+
+            dates = self.__get_position_year(sentence)
+
+            if dates: # Found a date
+                # Sticky variable
+                key_date = tuple(dates)
+
+                # Position of the date string
+                pos = sentence.find(dates[-1])
+                
+                # Potential company name and postion title
+                potential =  sentence[:pos]
+                print(potential)
+
+                # Remove date from hit sentence then append
+                details[key_date] = [sentence[pos + len(dates[-1]): ]]
+                is_date  = True
+                
+            elif not dates and is_date:
+                # Append details 
+                details[key_date].append(sentence)
+
         return details
-        
-    
-    
+
     def create(self):
         """
         Return a dictionary with resume data
         """
-        #return [ent.text for ent in nlp(self.get_section(section = "experience")) if ent.label_ == "ORG"]
 
         return {"index": self.key,
                 "name": self.get_names(),
                 "email": self.get_emails(),
                 "phone_number": self.get_phone_numbers(),
                 "links": self.get_links(),
-                "experience": self.get_section(section = "experience"),
+                "experience": self.get_experience(),
                 "skills": self.get_section(section="skills"),
                 "education": self.get_section(section="education") }
 
 if __name__ == "__main__":
     from utils import TextExtractor
     import pandas as pd
-
-    path = "C:\\Users\\medSr\\Documents\\resume-job-matcher\\resumes\\MISC\\MohamedSriha-Discord.pdf"
-    path ="C:\\Users\\medSr\\Documents\\resume-job-matcher\\resumes\\CHEF\\10333299.pdf"
+    import pprint
+    
+    #path = "C:\\Users\\medSr\\Documents\\resume-job-matcher\\resumes\\MISC\\MohamedSriha-Discord.pdf"
+    path ="C:\\Users\\medSr\\Documents\\resume-job-matcher\\resumes\\FITNESS\\39805617.pdf"
     resume_txt = TextExtractor(file_path = path).convert_pdf()
-    Profile(resume=resume_txt, key=path).create()['experience']
+    profile = Profile(resume=resume_txt, key=path)
+    pprint.pprint(profile.get_experience())
     # print(Profile(resume=resume_txt, key=path).create())
     
     # resume_txt = TextExtractor(file_path = path).convert_pdf()
