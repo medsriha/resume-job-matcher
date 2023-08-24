@@ -27,8 +27,7 @@ class TextProcessor (object):
     
     def sent_tokenizer(self, text) -> list:
         # Split text into sentences using punctuation, spaces and upper case letters
-        sentences = re.split(r'(?<=[.!?•])\s+(?=[A-Z])', text)
-        return sentences
+        return re.split(r'(?<=[.!?•])\s+(?=[A-Z])', text)
 
 class TextExtractor(object):
     

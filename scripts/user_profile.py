@@ -10,139 +10,14 @@ from utils import TextProcessor
 # Load the English model
 nlp = spacy.load("en_core_web_lg")
 
-RESUME_SECTIONS = {
-    "Accomplishments",
-    "Achievements and Accomplishments",
-    "Additional Achievements",
-    "Additional Information",
-    "Availability",
-    "Awards",
-    "Awards and Honors",
-    "Awards and Recognition",
-    "Certifications",
-    "Computer Skills",
-    "Conferences and Presentations",
-    "Contact Information",
-    "Courses Relevant to the Job",
-    "Education",
-    "Education and Training",
-    "Employment History",
-    "Experience",
-    "Extracurricular Activities",
-    "Grants and Scholarships",
-    "Highlights",
-    "Honors",
-    "Interest and Hobbies",
-    "Interests and Hobbies",
-    "Internship Experience",
-    "Language Skills",
-    "Languages",
-    "Leadership Experience",
-    "Licenses",
-    "Memberships Honors",
-    "Memberships and Honors",
-    "Military Service",
-    "Objective",
-    "Personal Information",
-    "Personal Projects",
-    "Professional Affiliations",
-    "Professional Development", 
-    "Research Experience",
-    "Professional Experience",
-    "Professional Goals",
-    "Technical Skills",
-    "Professional Memberships",
-    "Professional Skills",
-    "Programming Languages",
-    "Project Portfolio",
-    "Projects",
-    "Public Speaking Engagements",
-    "Publications",
-    "Qualifications",
-    "References",
-    "References from LinkedIn",
-    "Research Experience",
-    "Salary History",
-    "Skills",
-    "Soft Skills",
-    "Software Skills",
-    "Summary",
-    "Summary of Qualifications",
-    "Teaching Experience",
-    "Technical Expertise",
-    "Technical Proficiencies",
-    "Transferable Skills",
-    "Volunteer Experience",
-    "Volunteer Work",
-    "Volunteering",
-    "Work Experience",
-    "Work History",
-    "QUALIFICATIONS",
-    "ACCOMPLISHMENTS",
-    "SOFT SKILLS",
-    "RESEARCH EXPERIENCE",
-    "PERSONAL INFORMATION",
-    "CONFERENCES AND PRESENTATIONS",
-    "ADDITIONAL INFORMATION",
-    "WORK HISTORY",
-    "INTERESTS AND HOBBIES",
-    "CERTIFICATIONS",
-    "PROGRAMMING LANGUAGES",
-    "PROFESSIONAL DEVELOPMENT",
-    "RESEARCH EXPERIENCE",
-    "PROFESSIONAL SKILLS",
-    "HIGHLIGHTS",
-    "INTEREST AND HOBBIES",
-    "PROJECT PORTFOLIO",
-    "REFERENCES",
-    "MEMBERSHIPS AND HONORS",
-    "SOFTWARE SKILLS",
-    "TEACHING EXPERIENCE",
-    "EDUCATION AND TRAINING",
-    "PUBLICATIONS",
-    "VOLUNTEERING",
-    "PROFESSIONAL GOALS",
-    "TECHNICAL SKILLS",
-    "CONTACT INFORMATION",
-    "ACHIEVEMENTS AND ACCOMPLISHMENTS",
-    "SUMMARY OF QUALIFICATIONS",
-    "PROFESSIONAL MEMBERSHIPS",
-    "REFERENCES FROM LINKEDIN",
-    "VOLUNTEER EXPERIENCE",
-    "LANGUAGES",
-    "VOLUNTEER WORK",
-    "TECHNICAL EXPERTISE",
-    "AWARDS AND RECOGNITION",
-    "LICENSES",
-    "INTERNSHIP EXPERIENCE",
-    "OBJECTIVE",
-    "MEMBERSHIPS HONORS",
-    "PUBLIC SPEAKING ENGAGEMENTS",
-    "LEADERSHIP EXPERIENCE",
-    "EMPLOYMENT HISTORY",
-    "GRANTS AND SCHOLARSHIPS",
-    "SUMMARY",
-    "HONORS",
-    "AWARDS AND HONORS",
-    "COMPUTER SKILLS",
-    "EXTRACURRICULAR ACTIVITIES",
-    "PROFESSIONAL EXPERIENCE",
-    "EXPERIENCE",
-    "TECHNICAL PROFICIENCIES",
-    "PERSONAL PROJECTS",
-    "SALARY HISTORY",
-    "TRANSFERABLE SKILLS",
-    "ADDITIONAL ACHIEVEMENTS",
-    "LANGUAGE SKILLS",
-    "AWARDS",
-    "PROFESSIONAL AFFILIATIONS",
-    "COURSES RELEVANT TO THE JOB",
-    "SKILLS",
-    "AVAILABILITY",
-    "MILITARY SERVICE",
-    "EDUCATION",
-    "WORK EXPERIENCE",
-    "PROJECTS"}
+CONTACT_INFO = {'contact information', 'personal information', 'contact'}
+OBJECTIVE = {'objective', 'career objective', 'professional objective', 'summary', 'employment objective', 'professional goals', 'career goal'}
+SKILLS = {'transferable skills', 'language competencies and skills', 'software skills', 'technologies', 'areas of experience', 'computer knowledge', 'competencies', 'summary of qualifications', 'other skills', 'technical proficiencies', 'soft skills', 'areas of knowledge', 'aualifications', 'career related skills', 'professional skills', 'credentials', 'proficiencies', 'qualifications', 'skills', 'other abilities', 'transferable skillslanguage skills', 'computer skills', 'technical experience', 'personal skills', 'areas of expertise', 'technical skills', 'languages', 'programming languages', 'specialized skills'}
+EDUCATION = {'academic training', 'programs', 'educational background', 'academic qualification', 'education', 'academic background', 'course project experience', 'educational qualifications', 'courses', 'courses relevant to the job', 'apprenticeships', 'related courses', 'educational training', 'certifications', 'licenses', 'education and training'}
+EXPERIENCE = {'professional experience', 'working history', 'professional activities', 'project', 'personal projects', 'military service', 'college activities', 'freelance experience', 'volunteer experience', 'training', 'experience', 'special training', 'professional affiliations', 'leadership experience', 'volunteer work', 'career related experience', 'freelance', 'related experience', 'army experience', 'internship experience', 'project portfolio', 'technical expertise', 'professional background', 'professional employment', 'teaching experience', 'academic experience', 'professional employment history', 'career summary', 'professional training', 'military experience', 'projects', 'employment data', 'additional achievements', 'additional experience', 'relevant experience', 'professional associations', 'work history', 'research experience', 'related course projects', 'volunteering', 'internships', 'accomplishments', 'employment history', 'activities', 'military background', 'work experience', 'programming experience'}
+ACCOMPLISHMENT = {'research projects', 'honorsmemberships and honors', 'conference presentations', 'thesis', 'highlights', 'exhibits', 'awards and honors', 'current research interests', 'conventions', 'awards', 'activities and honors', 'research grants', 'achievements and accomplishments', 'dissertations', 'publications', 'presentations', 'theses', 'grants and scholarships', 'achievement', 'professional publications', 'papers', 'memberships honors', 'memberships and honorshonors', 'awards and recognition', 'awards and achievements'}
+MISC = {'civic activities', 'references', 'professional development', 'additional information', 'salary history', 'refere', 'public speaking engagements', 'extra-curricular activities', 'availability', 'community involvement', 'professional memberships', 'interest and hobbies', 'interests', 'digital', 'memberships', 'athletic involvement', 'affiliations', 'associations', 'extracurricular activities', 'interests and hobbies', 'conferences and presentations', 'references from linkedin'}
+ALL_TITLES = {'academic training', 'programs', 'working history', 'personal projects', 'professional development', 'military service', 'apprenticeships', 'volunteer experience', 'training', 'awards and honors', 'special training', 'professional affiliations', 'leadership experience', 'current research interests', 'competencies', 'volunteer work', 'technical proficiencies', 'aualifications', 'educational training', 'professional skills', 'professional employment', 'course project experience', 'career summary', 'transferable skillslanguage skills', 'digital', 'projects', 'additional achievements', 'research grants', 'technical experience', 'affiliations', 'associations', 'theses', 'interests and hobbies', 'related course projects', 'grants and scholarships', 'areas of expertise', 'volunteering', 'education', 'awards and recognition', 'programming languages', 'professional experience', 'academic background', 'professional activities', 'objective', 'career objective', 'educational qualifications', 'conference presentations', 'thesis', 'highlights', 'exhibits', 'areas of experience', 'computer knowledge', 'experience', 'awards and achievements', 'conventions', 'soft skills', 'career related experience', 'freelance', 'areas of knowledge', 'extra-curricular activities', 'technical expertise', 'community involvement', 'professional employment history', 'employment objective', 'contact', 'employment data', 'memberships', 'athletic involvement', 'publications', 'personal skills', 'contact information', 'languages', 'employment history', 'activities', 'programming experience', 'conferences and presentations', 'references from linkedin', 'research projects', 'civic activities', 'honorsmemberships and honors', 'language competencies and skills', 'additional information', 'professional goals', 'technologies', 'refere', 'educational background', 'summary of qualifications', 'other skills', 'related experience', 'career related skills', 'availability', 'internship experience', 'project portfolio', 'credentials', 'professional background', 'awards', 'teaching experience', 'professional memberships', 'qualifications', 'other abilities', 'activities and honors', 'personal information', 'computer skills', 'additional experience', 'relevant experience', 'presentations', 'extracurricular activities', 'papers', 'achievement', 'professional objective', 'courses', 'technical skills', 'accomplishments', 'certifications', 'work experience', 'project', 'references', 'transferable skills', 'related courses', 'software skills', 'college activities', 'freelance experience', 'career goal', 'salary history', 'public speaking engagements', 'army experience', 'courses relevant to the job', 'proficiencies', 'skills', 'academic experience', 'summary', 'professional training', 'military experience', 'interest and hobbies', 'academic qualification', 'interests', 'education and training', 'achievements and accomplishments', 'dissertations', 'professional associations', 'work history', 'research experience', 'professional publications', 'memberships and honorshonors', 'internships', 'memberships honors', 'military background', 'licenses', 'specialized skills'}
 
 REGEX_PATTERNS = {
     "email_pattern": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
@@ -167,8 +42,8 @@ class Profile(object):
             self.text = resume[key]
 
         self.doc = nlp(self.text)
-        self.tokens = re.split(r"\n| {4,}", self.text)
-        
+        #self.tokens = re.split(r"\n| {4,}", self.text)
+
         self.key = key
         self.cleaner = TextProcessor()
 
@@ -255,8 +130,7 @@ class Profile(object):
         Returns:
             bool: 
         """
-        if text in ("EXPERIENCE", "experience", "Experience", "Accomplishments", "ACCOMPLISHMENTS") or\
-              re.findall(REGEX_PATTERNS["experience_pattern"], text):
+        if text in EXPERIENCE or re.findall(REGEX_PATTERNS["experience_pattern"], text):
             return True
         return False
 
@@ -268,8 +142,7 @@ class Profile(object):
         Returns:
             bool: 
         """
-        if text in ("SKILLS", "skills", "Skills", "Qualifications", "QUALIFICATIONS", "Highlights", "HIGHLIGHTS") or\
-            re.findall(REGEX_PATTERNS["skills_pattern"], text):
+        if text in SKILLS or re.findall(REGEX_PATTERNS["skills_pattern"], text):
             return True
         return False
     
@@ -281,7 +154,7 @@ class Profile(object):
         Returns:
             bool: 
         """
-        if text in ("EDUCATION", "education", "Education") or re.findall(r"(Education|EDUCATION)(?: and|AND)? (Training|TRAINING)", text):
+        if text in EDUCATION or re.findall(r"(Education|EDUCATION)(?: and|AND)? (Training|TRAINING)", text):
             return True
         return False
 
@@ -310,23 +183,24 @@ class Profile(object):
         
         details = []
         is_section = False
+        tokens = self.text.splitlines(keepends=True)
 
-        for token in self.tokens:
-            # Validation text
-            tmp_txt = self.cleaner.remove_punct(token)
-            if tmp_txt:
-                if is_section and tmp_txt not in RESUME_SECTIONS :
-                    details.append(self.cleaner.remove_tabs(token))
+        for token in tokens:
+            # Remove punct from text and lower case it
+            tmp_token = self.cleaner.remove_punct(token).lower()
+            
+            if not tmp_token: 
+                continue
+            elif is_section and not fct(tmp_token) and tmp_token not in ALL_TITLES:
+                details.append(token)
+            elif tmp_token in ALL_TITLES and not fct(tmp_token):
+                # i.e, if text is a section title and section title is not experience
+                is_section = False
+            elif fct(tmp_token):
+                # Found the required section
+                is_section = True
 
-                elif tmp_txt in RESUME_SECTIONS and not fct(tmp_txt):
-                    # If text is a section title and section text does not meet the pattern
-                    is_section = False
-
-                elif fct(tmp_txt):
-                    # Found section
-                    is_section = True
-
-        return " ".join(details)
+        return "".join(details)
 
     def get_experience(self):
         """
@@ -336,32 +210,38 @@ class Profile(object):
             str: 
         """
 
-        text = self.get_section(section='experience')
-        sentences = self.cleaner.sent_tokenizer(text)
+        tokens = self.get_section(section='experience').splitlines(True)
         details = {}
+        dates_list = []
         is_date  = False
-        for sentence in sentences:
+        
+        for token in tokens:
+            
+            dates = self.__get_position_year(self.cleaner.remove_punct(token))
 
-            dates = self.__get_position_year(sentence)
+            if len(dates) == 1: 
+                # Found one date, second date is probably in the nextline
+                dates_list.append(dates)
 
-            if dates: # Found a date
+
+            if len(dates) == 2 or len(dates_list) == 2:
                 # Sticky variable
-                key_date = tuple(dates)
-
-                # Position of the date string
-                pos = sentence.find(dates[-1])
-                
-                # Potential company name and postion title
-                potential =  sentence[:pos]
-                print(potential)
-
-                # Remove date from hit sentence then append
-                details[key_date] = [sentence[pos + len(dates[-1]): ]]
+                if len(dates) == 2:
+                    key_date = tuple(dates)
+                else:
+                    key_date = tuple(dates_list)
+                    
+                # Append sentence
+                print(token, key_date)
+                details[key_date] = [token]
                 is_date  = True
-                
+
+            elif len(dates) > 2 or len(dates_list) == 2:
+                raise Exception("More than 2 dates found in experience text!!")
+            
             elif not dates and is_date:
                 # Append details 
-                details[key_date].append(sentence)
+                details[key_date].append(token)
 
         return details
 
@@ -384,10 +264,11 @@ if __name__ == "__main__":
     import pandas as pd
     import pprint
     
-    #path = "C:\\Users\\medSr\\Documents\\resume-job-matcher\\resumes\\MISC\\MohamedSriha-Discord.pdf"
+    path = "C:\\Users\\medSr\\Documents\\resume-job-matcher\\resumes\\MISC\\MohamedSriha-Discord.pdf"
     path ="C:\\Users\\medSr\\Documents\\resume-job-matcher\\resumes\\FITNESS\\39805617.pdf"
     resume_txt = TextExtractor(file_path = path).convert_pdf()
     profile = Profile(resume=resume_txt, key=path)
+    # profile.get_experience()
     pprint.pprint(profile.get_experience())
     # print(Profile(resume=resume_txt, key=path).create())
     
