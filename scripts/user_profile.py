@@ -213,35 +213,41 @@ class Profile(object):
         tokens = self.get_section(section='experience').splitlines(True)
         details = {}
         dates_list = []
-        is_date  = False
+        is_date_found  = False
         
         for token in tokens:
             
             dates = self.__get_position_year(self.cleaner.remove_punct(token))
-
             if len(dates) == 1: 
-                # Found one date, second date is probably in the nextline
-                dates_list.append(dates)
+                # Found one date, second date is probably in the nextline or after
+                dates_list.append(dates[0])
 
-
-            if len(dates) == 2 or len(dates_list) == 2:
-                # Sticky variable
-                if len(dates) == 2:
+            
+            if len(dates) == 2 and len(dates_list) == 2:
+                # Found two dates on the same line and have one date in the list
+                raise Exception("Inconcisency found in one of the lines")
+            
+            elif len(dates) > 2 or len(dates_list) > 2:
+                raise Exception(f"{max(len(dates), len(dates_list))} dates found in a single line")
+                        
+            elif len(dates) == 2 or len(dates_list) == 2:
+                # Found two dates on the same line or missing second date was found
+                if len(dates) == 2: # keys
                     key_date = tuple(dates)
                 else:
                     key_date = tuple(dates_list)
                     
                 # Append sentence
-                print(token, key_date)
                 details[key_date] = [token]
-                is_date  = True
-
-            elif len(dates) > 2 or len(dates_list) == 2:
-                raise Exception("More than 2 dates found in experience text!!")
-            
-            elif not dates and is_date:
-                # Append details 
+                is_date_found  = True
+                # Empty 
+                dates_list = []
+            elif is_date_found and len(dates) == 0:
+                # Date already found, next is to collect all the details 
+                # that comes after until next date
                 details[key_date].append(token)
+            else:
+                print('discard', token)
 
         return details
 
@@ -268,8 +274,9 @@ if __name__ == "__main__":
     path ="C:\\Users\\medSr\\Documents\\resume-job-matcher\\resumes\\FITNESS\\39805617.pdf"
     resume_txt = TextExtractor(file_path = path).convert_pdf()
     profile = Profile(resume=resume_txt, key=path)
+    print(profile.get_section('experience'))
     # profile.get_experience()
-    pprint.pprint(profile.get_experience())
+    # pprint.pprint(profile.get_experience())
     # print(Profile(resume=resume_txt, key=path).create())
     
     # resume_txt = TextExtractor(file_path = path).convert_pdf()
