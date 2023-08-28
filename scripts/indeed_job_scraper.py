@@ -5,19 +5,20 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-import csv
+import json
 import time
 import re
 from datetime import datetime, timedelta
 
-class ExtractJobLinksFromIndeed(object):
+class ExtractJobsFromIndeed(object):
     def __init__(self, 
-                 headless = False, 
-                 params = {"q": "machine learning engineer", 
+                 headless = False,
+                 # Search criteria
+                 params = {"q": "data science", 
                            "l": "chicago IL",
                            "fromage": "7",
                            "radius": "35"},
-                           url = "https://www.indeed.com/jobs?"):
+                url = "https://www.indeed.com/jobs?"):
                 
         # Webdriver configuration
         option = webdriver.EdgeOptions()
@@ -39,70 +40,82 @@ class ExtractJobLinksFromIndeed(object):
         # Intiate driver
         self.driver = webdriver.Edge(options=option)
         
-        # Construct final url with user's fiter
+        # Construct final url with user"s fiter
         url = url + urllib.parse.urlencode(params)
         # First call
         self.driver.get(url)
-        # main
-        self.save_job_details()
+        # Store data in memory prior to disk
+        self.__details = []
 
-    def __save_job_details(self):
+
+    def __get(self, attiribute, by = None, element = None) -> str:
+        
+        if element:
+            element = element
+        else:
+            element = self.driver
+        try:
+            return element.find_element(by, attiribute).text
+        except NoSuchElementException:
+            return ""
+
+    def __get_job_details(self) -> None:
         """
         helper function -> Scrape job details from indeed.com
         """        
 
         try:
             # Close sign up popup
-            self.driver.find_element(By.XPATH, "//button[@aria-label='close']").click()
-        except:
+            self.driver.find_element(By.XPATH, "//button[@aria-label="close"]").click()
+        except NoSuchElementException:
+            # No popup window this time
             pass
         
         # Extract all webelements with job information
-        web_elements = self.driver.find_elements(By.XPATH, "//td[@class='resultContent']")
+        web_elements = self.driver.find_elements(By.XPATH, "//td[@class="resultContent"]")
 
-        with open ("./indeed-jobs.csv", "a", encoding="utf-8") as w:
-            # Create the writer
-            writer = csv.writer(w, delimiter='|')
+        for elem in web_elements:
 
-            for elem in web_elements:
-
-                dic = {}
-                # Click on content
-                elem.click()
-                # wait until job preview appears
-                time.sleep(5)
-                # WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.ID, "jobDescriptionText")))
-                # Posting date on indeed
-                date = elem.find_element(By.XPATH, "//span[@class='date']").text
-                # Process the raw date and convert it into the proper format
-                if 'Today' in date:
-                    # Today
-                    dic['job_post_date'] = datetime.now().strftime('%m/%d/%Y')
-                else:
-                    days = int(re.sub('[^0-9]', '', date))
-                    dic['job_post_date'] = (datetime.now() - timedelta(days=days)).strftime('%m/%d/%Y')
-                # Job title
-                dic['job_title'] = elem.find_element(By.CLASS_NAME, "jobTitle").text
-                # Filter params
-                dic['filter_job_title'] = self.params['q']   
-                try:
-                    # Company name
-                    dic['company_name'] = elem.find_element(By.CLASS_NAME, "companyName").text
-                except NoSuchElementException:
-                    dic['company_name'] = ''
-                # Job location
-                dic['location'] = elem.find_element(By.CLASS_NAME, "companyLocation").text
-                # filter info
-                dic['filter_location'] = self.params['l']
-                # Detailed job description
-                dic['innerHTML'] =  self.driver.find_element(By.CLASS_NAME, "jobsearch-jobDescriptionText").get_attribute('innerHTML')
-                # Append into a csv file
-                writer.writerow(dic.values())
-                # sleep to avoid blocking
-                time.sleep(5)
+            dic = {}
+            # Click on content
+            elem.click()
+            # wait until job preview finishes loading
+            time.sleep(5)
+            # Posting date on indeed
+            date = self.__get("//span[@class="date"]", By.XPATH, elem)
+            # Process the raw date and convert it into the proper format
+            if "Today" in date:
+                # Today
+                dic["job_post_date"] = datetime.now().strftime("%m/%d/%Y")
+            else:
+                days = int(re.sub("[^0-9]", "", date))
+                dic["job_post_date"] = (datetime.now() - timedelta(days=days)).strftime("%m/%d/%Y")
+                
+            # Job title
+            dic["job_title"] = self.__get("jobTitle", By.CLASS_NAME, elem)
+            # Filter params
+            dic["filter_job_title"] = self.params["q"]
+                # Company name
+            dic["company_name"] = self.__get("companyName", By.CLASS_NAME, elem)
+            # Job location
+            dic["companyLocation"] = self.__get("companyLocation", By.ID)
+            # filter info
+            dic["locationFromFilter"] = self.params["l"]
+            # Detailed job description
+            dic["jobDescriptionText"] = self.__get("jobDescriptionText", By.ID)
+            # Benefit
+            dic["benefits"] =  self.__get("benefits", By.ID)
+            # Comp and other
+            dic["salaryInfoAndJobType"] = self.__get("salaryInfoAndJobType", By.ID)
+            # Section. May lists job type such full time
+            dic["jobDetailsSection"] = self.__get("jobDetailsSection", By.ID)
+            # Append into a list
+            self.__details.append(dic)
+            # sleep to avoid blocking
+            time.sleep(5)
     
    
-    def save_job_details(self):
+    def get_job_details(self) -> list:
         
         """
         Scrapes job details from indeed.com
@@ -113,18 +126,36 @@ class ExtractJobLinksFromIndeed(object):
         while True:
             # Run extraction batch - links from this function will
             # be appended into a csv file 
-            self.__save_job_details()
+            self.__get_job_details()
             # Move to the next page using pagination
             page_number += 1
             try:
                 # Pagination
-                self.driver.find_element(By.XPATH, "//a[@data-testid='pagination-page-next']").click()
+                self.driver.find_element(By.XPATH, "//a[@data-testid="pagination-page-next"]").click()
             except NoSuchElementException:
                 # No more page to scrape, the job is done
-                print(f'>> Complete: {page_number} pages were crawled')
-                return 
+                print(f">> Complete: {page_number} pages were crawled")
+                return self.__details
 
 
-if __name__ == '__main__':
-    ExtractJobLinksFromIndeed()
+if __name__ == "__main__":
     
+    data = ExtractJobsFromIndeed().get_job_details()
+
+    file_path = "../data/indeed-jobs.json"
+
+    # Step 1: Read the existing JSON data from the file (if it exists)
+    try:
+        with open(file_path, "r", encoding="utf-8") as json_file:
+            existing_data = json.load(json_file)
+    except FileNotFoundError:
+        # If the file doesn"t exist, start with an empty dictionary
+        existing_data = []
+
+    # Step 2: Append your new dictionary to the existing dictionary
+    for elem in data:
+        existing_data.append(elem)
+    
+    # Step 3: Write the updated dictionary back to the JSON file
+    with open(file_path, "w", encoding="utf-8") as json_file:
+        json.dump(existing_data, json_file, indent=4)
