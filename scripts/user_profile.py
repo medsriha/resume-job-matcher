@@ -214,5 +214,5 @@ if __name__ == "__main__":
     # Extract details from each resume 
     data = [Profile(resume=resume, key=key).create() for key, resume in resume_txt.items()]
     # Load the resumes into a json file
-    with open('../data/profiles.json', 'w', encoding='utf-8') as f:
+    with open('../data/user_profile.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
