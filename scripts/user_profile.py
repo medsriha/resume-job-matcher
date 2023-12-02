@@ -1,89 +1,95 @@
-
+# user_profile.py
 """
 Extract data from input resume such email, phone, number, work experience, education then create a user profile
 """
 
 import re
-import spacy
 from utils import TextProcessor
-import json
-# Load the English model
-nlp = spacy.load("en_core_web_lg")
-
-CONTACT_INFO = {"contact information", "personal information", "contact"}
-OBJECTIVE = {"objective", "career objective", "professional objective", "summary", "employment objective", "professional goals", "career goal"}
-SKILLS = {"transferable skills", "highlights", "language competencies and skills", "software skills", "technologies", "areas of experience", "computer knowledge", "competencies", "summary of qualifications", "other skills", "technical proficiencies", "soft skills", "areas of knowledge", "aualifications", "career related skills", "professional skills", "credentials", "proficiencies", "qualifications", "skills", "other abilities", "transferable skillslanguage skills", "computer skills", "technical experience", "personal skills", "areas of expertise", "technical skills", "languages", "programming languages", "specialized skills"}
-EDUCATION = {"academic training", "programs", "educational background", "academic qualification", "education", "academic background", "course project experience", "educational qualifications", "courses", "courses relevant to the job", "apprenticeships", "related courses", "educational training", "certifications", "licenses", "education and training"}
-EXPERIENCE = {"professional experience", "working history", "professional activities", "project", "personal projects", "military service", "college activities", "freelance experience", "volunteer experience", "training", "experience", "special training", "professional affiliations", "leadership experience", "volunteer work", "career related experience", "freelance", "related experience", "army experience", "internship experience", "project portfolio", "technical expertise", "professional background", "professional employment", "teaching experience", "academic experience", "professional employment history", "career summary", "professional training", "military experience", "projects", "employment data", "additional achievements", "additional experience", "relevant experience", "professional associations", "work history", "research experience", "related course projects", "volunteering", "internships", "employment history", "activities", "military background", "work experience", "programming experience"}
-ACCOMPLISHMENT = {"accomplishments", "research projects", "honorsmemberships and honors", "conference presentations", "thesis", "exhibits", "awards and honors", "current research interests", "conventions", "awards", "activities and honors", "research grants", "achievements and accomplishments", "dissertations", "publications", "presentations", "theses", "grants and scholarships", "achievement", "professional publications", "papers", "memberships honors", "memberships and honorshonors", "awards and recognition", "awards and achievements"}
-MISC = {"civic activities", "references", "professional development", "additional information", "salary history", "refere", "public speaking engagements", "extra-curricular activities", "availability", "community involvement", "professional memberships", "interest and hobbies", "interests", "digital", "memberships", "athletic involvement", "affiliations", "associations", "extracurricular activities", "interests and hobbies", "conferences and presentations", "references from linkedin"}
-ALL_TITLES = {"academic training", "programs", "working history", "personal projects", "professional development", "military service", "apprenticeships", "volunteer experience", "training", "awards and honors", "special training", "professional affiliations", "leadership experience", "current research interests", "competencies", "volunteer work", "technical proficiencies", "aualifications", "educational training", "professional skills", "professional employment", "course project experience", "career summary", "transferable skillslanguage skills", "digital", "projects", "additional achievements", "research grants", "technical experience", "affiliations", "associations", "theses", "interests and hobbies", "related course projects", "grants and scholarships", "areas of expertise", "volunteering", "education", "awards and recognition", "programming languages", "professional experience", "academic background", "professional activities", "objective", "career objective", "educational qualifications", "conference presentations", "thesis", "highlights", "exhibits", "areas of experience", "computer knowledge", "experience", "awards and achievements", "conventions", "soft skills", "career related experience", "freelance", "areas of knowledge", "extra-curricular activities", "technical expertise", "community involvement", "professional employment history", "employment objective", "contact", "employment data", "memberships", "athletic involvement", "publications", "personal skills", "contact information", "languages", "employment history", "activities", "programming experience", "conferences and presentations", "references from linkedin", "research projects", "civic activities", "honorsmemberships and honors", "language competencies and skills", "additional information", "professional goals", "technologies", "refere", "educational background", "summary of qualifications", "other skills", "related experience", "career related skills", "availability", "internship experience", "project portfolio", "credentials", "professional background", "awards", "teaching experience", "professional memberships", "qualifications", "other abilities", "activities and honors", "personal information", "computer skills", "additional experience", "relevant experience", "presentations", "extracurricular activities", "papers", "achievement", "professional objective", "courses", "technical skills", "accomplishments", "certifications", "work experience", "project", "references", "transferable skills", "related courses", "software skills", "college activities", "freelance experience", "career goal", "salary history", "public speaking engagements", "army experience", "courses relevant to the job", "proficiencies", "skills", "academic experience", "summary", "professional training", "military experience", "interest and hobbies", "academic qualification", "interests", "education and training", "achievements and accomplishments", "dissertations", "professional associations", "work history", "research experience", "professional publications", "memberships and honorshonors", "internships", "memberships honors", "military background", "licenses", "specialized skills"}
-
-REGEX_PATTERNS = {
-    "email_pattern": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
-    "phone_pattern": r"\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}",
-    "link_pattern": r"\b(?:https?://|www\.)\S+\b",
-    "date_pattern": r"(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{4}|\d{1,2}[ /\.-]\d{4}|Present|Current|to current|to present)",
-    "experience_pattern": r"(Professional|Work|Internship|Volunteer|Volunteering|Leadership|Research|Teaching|PROFESSIONAL|WORK|INTERNSHIP|VOLUNTEER|VOLUNTEERING|LEADERSHIP|RESEARCH|TEACHING)\s+(Experience|experience|EXPERIENCE|Expertise|expertise|EXPERTISE|History|history|HISTORY|Activities|activities|ACTIVITIES)",
-    "skills_pattern": r"(Technical|Summary|Hard|TECHNICAL|SUMMARY|HARD)(?: of|OF)? (Proficiencies|Qualifications|Expertise|Skills|SKILLS|PROFICIENCIES|QUALIFICATIONS|EXPERTISE)"
-    }
+import numpy as np
+import warnings
+from constants import constants
+import spacy
+# Spacy model
+nlp = spacy.load('en_core_web_lg')
 
 
 class Profile(object):
-    
-    def __init__(self, resume, key):
-        
-        if not key:
-            raise Exception(f"Must provide a key to proceed")
-        
+
+    def __init__(self, resume, zero_shot_model):
+
         if type(resume) == str:
             self.text = resume
         else:
-            self.text = resume[key]
+            raise Exception(f"Resume must be str and not {type(resume)}")
 
-        self.doc = nlp(self.text)
-
-        self.key = key
+        # Text cleaning (i.e. remove punctuation)
         self.cleaner = TextProcessor()
+        # Strip spaces between dashes
+        self.tokens = self.cleaner.strip_spaces_around_dash(self.text)
+        # Remove unicode from tokens
+        self.tokens = self.cleaner.remove_unicode(self.tokens)
+        # Split resume into sentence
+        self.tokens = self.tokens.splitlines(keepends=True)
+        # Resplit text using other delimeter not included in splitlines()
+        self.tokens = self.cleaner.resplit_text_by_tab(self.tokens)
+        # Remove empty strings
+        self.tokens = [
+            sent for sent in self.tokens if self.cleaner.remove_nonalphanum(sent)]
+        # ner
+        self.doc = nlp(' '.join(self.tokens))
+        # zero shot model
+        self.model = zero_shot_model
+        # Stores all the text captured by the get_section()
+        # function
+        self.cashe = set()
 
+    def add_to_cashe(self, value) -> None:
+        """Add captured values in a cashe"""
+        if value not in self.cashe:
+            self.cashe.add(value)
 
     def get_emails(self) -> str:
         """
         Extract email addresses from a given string using RegEx.
 
         Returns:
-            str: Email address listed on the resume
+            Str: Email address listed on the resume
         """
-        emails = re.findall(REGEX_PATTERNS["email_pattern"], self.text)
+        emails = re.findall(
+            constants.REGEX_PATTERNS["email_pattern"], self.text)
         if emails:
             # The first email is assumed to be the user"s email address
-            return emails[0]
-        return ''
-        
+            email = emails[0]
+            self.add_to_cashe(email)
+            return email
+        return None
+
     def get_names(self) -> str:
         """Extracts and returns a list of names from the given 
         text using spaCy"s named entity recognition.
 
         Returns:
-            str: Person name listed on the resume
+            Str: User name listed on the resume
         """
         names = [ent.text for ent in self.doc.ents if ent.label_ == "PERSON"]
         if names:
-            return names[0]  
-        return ''
-        
+            name = names[0]
+            self.add_to_cashe(name)
+            return name
+        return None
+
     def get_links(self) -> dict:
         """
         Find links of any type in a given string using RegEx.
-        
+
         Returns:
-            dict: links listed on the resume including Linkedin and github
+            Dict: links listed on the resume including Linkedin and github
         """
-        dic = {"linkedin": None, 
-               "github": None, 
+        dic = {"linkedin": None,
+               "github": None,
                "other": []}
-        
-        links = re.findall(REGEX_PATTERNS["link_pattern"], self.text)
+
+        links = re.findall(constants.REGEX_PATTERNS["link_pattern"], self.text)
         for link in links:
             # Normalize
             lower = link.lower()
@@ -94,6 +100,8 @@ class Profile(object):
             else:
                 if lower not in dic["other"]:
                     dic["other"].append(link)
+
+            self.add_to_cashe(link)
         return dic
 
     def get_phone_numbers(self) -> str:
@@ -101,48 +109,50 @@ class Profile(object):
         Extract phone numbers from a given string using RegEx.
 
         Returns:
-            str: Phone number listed on the resume
+            Str: Phone number listed on the resume
         """
-        phone_numbers = re.findall(REGEX_PATTERNS["phone_pattern"], self.text)
-        if phone_numbers: return phone_numbers[0]
-        return ''
-    
 
+        phone_numbers = re.findall(
+            constants.REGEX_PATTERNS["phone_pattern"], self.text)
+        if phone_numbers:
+            phone_number = phone_numbers[0]
+            self.add_to_cashe(phone_number)
+            return phone_number
+        return None
 
     def __get_section(self, text, section) -> bool:
-
         """
         Returns:
 
         """
 
         if section == "contact":
-            if text in CONTACT_INFO:
+            if text in constants.CONTACT_INFO:
                 return True
         elif section == "experience":
-            if text in EXPERIENCE or re.findall(REGEX_PATTERNS["experience_pattern"], text):
+            if text in constants.EXPERIENCE or re.findall(constants.REGEX_PATTERNS["experience_pattern"], text):
                 return True
         elif section == "skills":
-            if text in SKILLS or re.findall(REGEX_PATTERNS["skills_pattern"], text):
+            if text in constants.SKILLS or re.findall(constants.REGEX_PATTERNS["skills_pattern"], text):
                 return True
         elif section == "education":
-            if text in EDUCATION or re.findall(r"(Education|EDUCATION)(?: and|AND)? (Training|TRAINING)", text):
+            if text in constants.EDUCATION or re.findall(r"(Education|EDUCATION)(?: and|AND)? (Training|TRAINING)", text):
                 return True
         elif section == "objective":
-            if text in OBJECTIVE:
+            if text in constants.OBJECTIVE:
                 return True
         elif section == "accomplishment":
-            if text in ACCOMPLISHMENT:
+            if text in constants.ACCOMPLISHMENT:
                 return True
         elif section == "misc":
-            if text in MISC:
+            if text in constants.MISC:
                 return True
         else:
             raise Exception(f"Unknown section {section}")
-        
+
         return False
 
-    def get_section(self, section = None) -> list:
+    def get_section(self, section=None) -> list:
         """
         Extract details from raw resume
 
@@ -153,66 +163,181 @@ class Profile(object):
             List: details listed under the provided section
         """
         if not section:
-            raise Exception("Section name is unknown. Please provide one of the following input (experience, skills, and education)")
-        
+            raise Exception(
+                "Section name is unknown. Please provide one of the following input (experience, skills, and education)")
+
         details = {}
         is_section = False
-        tokens = self.text.splitlines(keepends=True)
 
-        for token in tokens:
+        for token in self.tokens:
             # Remove punct from text and lower case it
             tmp_token = self.cleaner.remove_punct(token).lower()
-            
-            if not tmp_token: 
+
+            if not tmp_token:
                 continue
-            elif is_section and not self.__get_section(text = tmp_token, section=section) and tmp_token not in ALL_TITLES:
+            elif is_section and not self.__get_section(text=tmp_token, section=section) and tmp_token not in constants.ALL_TITLES:
                 # If text is not a section title
                 details[sticky].append(token)
-            elif tmp_token in ALL_TITLES and not self.__get_section(text = tmp_token, section=section):
+                if token not in self.cashe:
+                    self.cashe.add(token)
+            elif tmp_token in constants.ALL_TITLES and not self.__get_section(text=tmp_token, section=section):
                 # i.e, if text is a section title and section title is not experience
                 is_section = False
-            elif self.__get_section(text = tmp_token, section=section):
+            elif self.__get_section(text=tmp_token, section=section):
                 # Found the required section
                 is_section = True
                 sticky = tmp_token
                 details[sticky] = []
+                if token not in self.cashe:
+                    self.cashe.add(token)
+        return details
+
+    def not_captured_sections(self):
+        """
+        Capture paragraphs with section title, usually objective or summary. 
+        This may be usefull for debugging as well.
+        """
+        details = []
+
+        for token in self.tokens:
+
+            if not self.cleaner.remove_punct(token):
+                # Discard empty lines
+                continue
+
+            elif token not in self.cashe:
+                # If line is not found in cashe, then
+                # it"s considered non-captured section
+                details.append(token)
 
         return details
 
+    def parse_education(self):
+        """
+        Group education details by school name, degree, graduation year, etc.
+        Multiple groups may exist within a single resume - multiple schools and degrees.
+
+        Returns:
+            Dict: Dictionary with education details grouped by school name, degree, etc
+
+        """
+        warnings.filterwarnings("ignore")
+
+        details = {}
+        # Identify then extract only education details from resume
+        educations = self.get_section(section="education")
+
+        for key, lines in educations.items():
+            details[key] = {}
+            # Holds education group number
+            count = 0
+            cleaned = []
+
+            # Remove empty punctuation and empty strings
+            for line in lines:
+
+                clean_line = self.cleaner.remove_punct(line)
+
+                if clean_line and clean_line.lower() not in constants.STOPWORDS:
+                    cleaned.append(line)
+
+            # Pass all the sentences to a zero shot model
+            results = self.model(
+                cleaned, constants.ZERO_SHOT_CLASSES["education"])
+
+            for res in results:
+                # Best of all
+                pos = np.argmax(res["scores"])
+
+                label = res["labels"][pos]
+                sent = res['sequence']
+
+                if label in ["institution name", "school name", "university name"]:
+                    label = "school_name"
+                elif label in ["project", "coursework"]:
+                    label = "coursework/projects"
+                else:
+                    label = re.sub(r"\s", "_", label)
+
+                if count == 0 or label == start:
+                    # Mark the start of each group
+                    start = label
+                    count += 1
+                    # Create a new group
+                    details[key]["edu_" + str(count)] = {label: [sent]}
+
+                elif label != start:
+                    # Still parsing the same education group
+                    if label in details[key]["edu_" + str(count)]:
+                        if sent not in details[key]["edu_" + str(count)][label]:
+                            details[key]["edu_" +
+                                         str(count)][label].append(sent)
+                    else:
+                        details[key]["edu_" + str(count)][label] = [sent]
+
+        # Place raw data in final results
+        details['raw'] = educations
+
+        return details
 
     def create(self) -> dict:
         """
-        Return a dictionary with resume data
+        Return a dictionary with resume data parsed and stored by section
         """
 
-        return {
-            "index": self.key, 
-                "resume": 
-                {
-                    "contact_info": {"contact_info": self.get_section("contact"),
-                                     "name": self.get_names(), 
-                                     "email": self.get_emails(),
-                                     "phone_number": self.get_phone_numbers(),
-                                     "links": self.get_links()
-                                     },
-                    "objective": self.get_section("objective"),
-                    "experience": self.get_section(section="experience"),
-                    "skills": self.get_section(section="skills"),
-                    "education": self.get_section(section="education"),
-                    "accomplishment": self.get_section(section="accomplishment"),
-                    "misc": self.get_section(section="misc") 
-                }
-            }
+        results = {"resume":
+                   {
+                       "contact_info": {
+                           "contact_info": self.get_section(section="contact"),
+                           "name": self.get_names(),
+                           "email": self.get_emails(),
+                           "phone_number": self.get_phone_numbers(),
+                           "links": self.get_links()
+                       },
+                       "objective": self.get_section(section="objective"),
+                       "experience": self.get_section("experience"),
+                       "skills": self.get_section(section="skills"),
+                       "education": self.parse_education(),
+                       "accomplishment": self.get_section(section="accomplishment"),
+                       "misc": self.get_section(section="misc"),
+                   }
+                   }
+        # Extract text not caputred by the above steps
+        other = self.not_captured_sections()
+
+        if other:
+            results["other"] = other
+
+        return results
+
 
 if __name__ == "__main__":
-
-    from utils import TextExtractor
+    from transformers import pipeline
+    from utils import TextExtractor, checkpoint
+    from tqdm import tqdm
+    pipe = pipeline("zero-shot-classification",
+                    model="../models/distilbart-mnli-12-9")
     # Where all the resumes are saved
-    path = "C:\\Users\\medSr\\Documents\\resume-job-matcher\\resumes\\"
+    path = "C:\\Users\\msriha\\Documents\\resume-job-matcher\\resumes\\MISC\\"
+    # path = "C:\\Users\\msriha\\Documents\\resume-job-matcher\\resumes\\MISC\\Mohamed Sriha-Resume.pdf"
     # Extract and convert all the resumes from the provided location into text
-    resume_txt = TextExtractor(file_path = path).convert_pdf()
-    # Extract details from each resume 
-    data = [Profile(resume=resume, key=key).create() for key, resume in resume_txt.items()]
-    # Load the resumes into a json file
-    with open('../data/user_profile.json', 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+    resume_txt = TextExtractor(file_path=path).parse()
+    data = {}
+    # Extract details from each resume
+    for i, (key, resume) in tqdm(enumerate(resume_txt.items())):
+        if i % 100 == 0 and i > 0:
+            # Save results every 100 records
+            checkpoint(
+                data, append_file_path="../data/user-profile-new.json", is_user=True)
+            # Empty memory
+            data = {}
+
+        data[key] = Profile(resume=resume, zero_shot_model=pipe).create()
+    if len(data) > 0:
+        # Have data left in memory after the above iteration is done
+        checkpoint(
+            data, append_file_path="../data/user-profile-new.json", is_user=True)
+    print('Done!')
+
+    # test_sample = ['C:\\Users\\msriha\\Documents\\resume-job-matcher\\resumes\\ACCOUNTANT\\14491649.pdf',
+    #                'C:\\Users\\msriha\\Documents\\resume-job-matcher\\resumes\\ACCOUNTANT\\14496667.pdf']
