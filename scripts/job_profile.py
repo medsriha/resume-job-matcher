@@ -1,8 +1,7 @@
 import json
 import re
 from utils import TextProcessor
-
-REGEX_PATTERNS = {"section_pattern": r"^\b[A-Z][A-Za-z\s]+\b[:\r\n\s]$"}
+from . import constants
 
 
 class Profile(object):
@@ -27,7 +26,8 @@ class Profile(object):
         details = {}
         tokens = text.splitlines(keepends=True)
         is_section = False
-        pattern = re.compile(REGEX_PATTERNS['section_pattern'])
+        
+        pattern = re.compile(constants.REGEX_PATTERNS['section_pattern'])
         cleaner = TextProcessor()
         
         for token in tokens:
@@ -36,13 +36,14 @@ class Profile(object):
             if not tmp_token: 
                 continue
 
+            # Find if a sentence has the compiled pattern
             match = pattern.match(token.strip())
             
             if match:
                 sticky = tmp_token
                 details[sticky] = []
                 is_section = True
-            elif tmp_token.istitle():
+            elif tmp_token.istitle() or tmp_token.isupper():
                 sticky = tmp_token
                 details[sticky] = []
                 is_section = True
@@ -65,11 +66,15 @@ class Profile(object):
 
 
         if len(jobs) == 0:
-            raise Exception('File in {self.in_path} exists but empty')
+            raise Exception("File in {self.in_path} exists but it's empty")
         
         # Parse and load into existing dictionary
-        for i in range(len(jobs)):
-            jobs[i]['parsed'] = self.__create(jobs[i]["jobDescriptionText"])
+        for job_catergory, values in jobs.items():
+            for ids, job_dt in values.items():
+                if "jobDescriptionText" in job_dt:
+                    jobs[job_catergory][ids]['parsed'] = self.__create(job_dt["jobDescriptionText"])
+                else:
+                     jobs[job_catergory][ids]['parsed'] = []
 
         # Update the file with the new details then write to disk
         with open(self.out_path, 'w', encoding='utf-8') as json_file:
