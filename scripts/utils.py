@@ -2,8 +2,8 @@ import os
 import glob
 from pypdf import PdfReader
 import docx
-import win32com.client as win32
-from win32com.client import constants
+# import win32com.client as win32
+# from win32com.client import constants
 import random
 import re
 import json
@@ -77,34 +77,34 @@ class TextExtractor(object):
             ('pdf', 'docx', 'doc', 'txt')), f'{file_path} is not a PDF file nor a Word document'
         return True
 
-    def __doc_to_docx(self, file_path: str) -> None:
-        # Opening MS Word
-        word = win32.gencache.EnsureDispatch('Word.Application')
-        doc = word.Documents.Open(file_path)
-        doc.Activate()
+    # def __doc_to_docx(self, file_path: str) -> None:
+    #     # Opening MS Word
+    #     word = win32.gencache.EnsureDispatch('Word.Application')
+    #     doc = word.Documents.Open(file_path)
+    #     doc.Activate()
 
-        # Rename path with .docx
-        new_file_abs = os.path.abspath(file_path)
-        new_file_abs = re.sub(r'\.\w+$', '.docx', new_file_abs)
+    #     # Rename path with .docx
+    #     new_file_abs = os.path.abspath(file_path)
+    #     new_file_abs = re.sub(r'\.\w+$', '.docx', new_file_abs)
 
-        # Save and Close
-        word.ActiveDocument.SaveAs(
-            new_file_abs, FileFormat=constants.wdFormatXMLDocument
-        )
-        doc.Close(False)
-        # Remove doc file after done
-        os.remove(file_path)
+    #     # Save and Close
+    #     word.ActiveDocument.SaveAs(
+    #         new_file_abs, FileFormat=constants.wdFormatXMLDocument
+    #     )
+    #     doc.Close(False)
+    #     # Remove doc file after done
+    #     os.remove(file_path)
 
     def __get_resumes_location(self) -> list:
 
         if os.path.isdir(self.file_path):
-            dirs = glob.glob(self.file_path + "**\\*")
+            dirs = glob.glob(self.file_path + "**/*")
             if len(dirs) > 0:
                 # subdirectories
-                files = glob.glob(self.file_path + "**\\*")
+                files = glob.glob(self.file_path + "**/*")
             else:
                 # No subdirectories
-                files = glob.glob(self.file_path + "\\**")
+                files = glob.glob(self.file_path + "/**")
 
             if len(files) == 0:
                 raise Exception(

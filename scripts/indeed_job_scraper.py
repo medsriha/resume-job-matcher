@@ -21,7 +21,7 @@ class ExtractJobsFromIndeed(object):
                 url = "https://www.indeed.com/jobs?"):
                 
         # Webdriver configuration
-        option = webdriver.EdgeOptions()
+        option = webdriver.ChromeOptions()
         option.add_experimental_option("excludeSwitches", ["enable-logging"])
         option.add_experimental_option("prefs", {"intl.accept_languages": "en,en_US"})
         option.add_argument("--enable--javascript")
@@ -38,7 +38,7 @@ class ExtractJobsFromIndeed(object):
             option.add_argument("--headless")
             
         # Intiate driver
-        self.driver = webdriver.Edge(options=option)
+        self.driver = webdriver.Chrome(options=option)
         
         # Construct final url with user"s fiter
         url = url + urllib.parse.urlencode(params)
@@ -54,10 +54,11 @@ class ExtractJobsFromIndeed(object):
             element = element
         else:
             element = self.driver
+            
         try:
             return element.find_element(by, attiribute).text
-        except NoSuchElementException:
-            return ""
+        except NoSuchElementException as e:
+            return 'Error: ' + repr(e)
 
     def __get_job_details(self) -> None:
         """
@@ -66,13 +67,13 @@ class ExtractJobsFromIndeed(object):
 
         try:
             # Close sign up popup
-            self.driver.find_element(By.XPATH, "//button[@aria-label="close"]").click()
+            self.driver.find_element(By.XPATH, '//button[@aria-label="close"]').click()
         except NoSuchElementException:
             # No popup window this time
             pass
         
         # Extract all webelements with job information
-        web_elements = self.driver.find_elements(By.XPATH, "//td[@class="resultContent"]")
+        web_elements = self.driver.find_elements(By.XPATH, '//td[@class="resultContent"]')
 
         for elem in web_elements:
 
@@ -82,20 +83,24 @@ class ExtractJobsFromIndeed(object):
             # wait until job preview finishes loading
             time.sleep(5)
             # Posting date on indeed
-            date = self.__get("//span[@class="date"]", By.XPATH, elem)
+            date = self.__get('//span[@class="date"]', By.XPATH, elem)
             # Process the raw date and convert it into the proper format
             if "Today" in date:
                 # Today
                 dic["job_post_date"] = datetime.now().strftime("%m/%d/%Y")
             else:
-                days = int(re.sub("[^0-9]", "", date))
-                dic["job_post_date"] = (datetime.now() - timedelta(days=days)).strftime("%m/%d/%Y")
+                try:
+                    days = int(re.sub("[^0-9]", "", date))
+                    dic["job_post_date"] = (datetime.now() - timedelta(days=days)).strftime("%m/%d/%Y")
+                except ValueError as e:
+                    dic["job_post_date"] = 'Error: ' + repr(e)
                 
-            # Job title
-            dic["job_title"] = self.__get("jobTitle", By.CLASS_NAME, elem)
+                
             # Filter params
             dic["filter_job_title"] = self.params["q"]
-                # Company name
+            # Job title
+            dic["job_title"] = self.__get("jobTitle", By.CLASS_NAME, elem)
+            # Company name
             dic["company_name"] = self.__get("companyName", By.CLASS_NAME, elem)
             # Job location
             dic["companyLocation"] = self.__get("companyLocation", By.ID)
@@ -123,7 +128,7 @@ class ExtractJobsFromIndeed(object):
         
         page_number = 1
         
-        while True:
+        while page_number < 2:
             # Run extraction batch - links from this function will
             # be appended into a csv file 
             self.__get_job_details()
@@ -131,11 +136,12 @@ class ExtractJobsFromIndeed(object):
             page_number += 1
             try:
                 # Pagination
-                self.driver.find_element(By.XPATH, "//a[@data-testid="pagination-page-next"]").click()
+                self.driver.find_element(By.XPATH, '//a[@data-testid="pagination-page-next"]').click()
             except NoSuchElementException:
                 # No more page to scrape, the job is done
-                print(f">> Complete: {page_number} pages were crawled")
-                return self.__details
+                break
+        print(f">>> Complete: {page_number} pages were crawled")
+        return self.__details
 
 
 if __name__ == "__main__":
@@ -149,7 +155,7 @@ if __name__ == "__main__":
         with open(file_path, "r", encoding="utf-8") as json_file:
             existing_data = json.load(json_file)
     except FileNotFoundError:
-        # If the file doesn"t exist, start with an empty dictionary
+        # If the file doesn't exist, start with an empty dictionary
         existing_data = []
 
     # Step 2: Append your new dictionary to the existing dictionary

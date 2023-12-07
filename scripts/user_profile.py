@@ -312,16 +312,13 @@ class Profile(object):
 
 
 if __name__ == "__main__":
+    OPENAI_API_KEY = "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"
     from transformers import pipeline
     from utils import TextExtractor, checkpoint
     from tqdm import tqdm
-    pipe = pipeline("zero-shot-classification",
-                    model="../models/distilbart-mnli-12-9")
-    # Where all the resumes are saved
-    path = "C:\\Users\\msriha\\Documents\\resume-job-matcher\\resumes\\MISC\\"
-    # path = "C:\\Users\\msriha\\Documents\\resume-job-matcher\\resumes\\MISC\\Mohamed Sriha-Resume.pdf"
-    # Extract and convert all the resumes from the provided location into text
-    resume_txt = TextExtractor(file_path=path).parse()
+
+    pipe = pipeline("zero-shot-classification", model="valhalla/distilbart-mnli-12-9")
+    resume_txt = TextExtractor(file_path="../data/resume/").parse()
     data = {}
     # Extract details from each resume
     for i, (key, resume) in tqdm(enumerate(resume_txt.items())):
@@ -331,13 +328,10 @@ if __name__ == "__main__":
                 data, append_file_path="../data/user-profile-new.json", is_user=True)
             # Empty memory
             data = {}
-
+        # Extract information from resume
         data[key] = Profile(resume=resume, zero_shot_model=pipe).create()
     if len(data) > 0:
         # Have data left in memory after the above iteration is done
         checkpoint(
             data, append_file_path="../data/user-profile-new.json", is_user=True)
     print('Done!')
-
-    # test_sample = ['C:\\Users\\msriha\\Documents\\resume-job-matcher\\resumes\\ACCOUNTANT\\14491649.pdf',
-    #                'C:\\Users\\msriha\\Documents\\resume-job-matcher\\resumes\\ACCOUNTANT\\14496667.pdf']

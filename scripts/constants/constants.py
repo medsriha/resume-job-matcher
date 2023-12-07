@@ -2,6 +2,85 @@
 from nltk.corpus import stopwords
 """This module defines project-level constants."""
 
+TEMPLATE = """
+[
+    {
+    "Executive summary":[],
+    "Objective":[],
+    "Work experience":[
+        [
+            {
+                "Company name":,
+                "From date":,
+                "To date":,
+                "City":,
+                "State":,
+                "Country":,
+                "Job title":,
+                "Description":[]
+            }
+        ]
+    ],
+    "Education":[
+        [
+            {
+                "School name":,
+                "From date":,
+                "To date":,
+                "City":,
+                "State":,
+                "Country":,
+                "Degree":,
+                "Field of study":,
+                "Description":[]
+            }
+        ]
+    ],
+    "Certificate":[
+        [
+            {
+                "Certificate provider":,
+                "From date":,
+                "To date":,
+                "City":,
+                "State":,
+                "Country":,
+                "Description":
+            }
+        ]
+    ],
+    "Projects":[
+        {
+            "Project title":,
+            "Description":[]
+        }
+    ],
+    "Skills":[
+        {
+            "Hard skills":[],
+            "Soft skills":[]
+        }
+    ],
+    "Contact information":[
+        {
+            "Phone number":,
+            "Email address":,
+            "LinkedIn link":,
+            "GitHub link":,
+            "Personal website link":[]
+        }
+    ],
+    "Languages":[
+        [
+            {
+                "Language":,
+                "Proficiency":""
+            }
+        ]
+    ]
+    }
+]
+"""
 
 CONTACT_INFO = {"contact information", "personal information", "contact"}
 OBJECTIVE = {"objective", "career objective", "professional objective", "professional summary",
@@ -32,5 +111,10 @@ REGEX_PATTERNS = {
     "experience_pattern": r"(Professional|Work|Internship|Volunteer|Volunteering|Leadership|Research|Teaching|PROFESSIONAL|WORK|INTERNSHIP|VOLUNTEER|VOLUNTEERING|LEADERSHIP|RESEARCH|TEACHING)\s+(Experience|experience|EXPERIENCE|Expertise|expertise|EXPERTISE|History|history|HISTORY|Activities|activities|ACTIVITIES)",
     "skills_pattern": r"(Technical|Summary|Hard|TECHNICAL|SUMMARY|HARD)(?: of|OF)? (Proficiencies|Qualifications|Expertise|Skills|SKILLS|PROFICIENCIES|QUALIFICATIONS|EXPERTISE)"
 }
-# stopwords
-STOPWORDS = stopwords.words('english')
+try:
+    # stopwords
+    STOPWORDS = stopwords.words('english')
+except:
+    import nltk
+    nltk.download('stopwords')
+    STOPWORDS = stopwords.words('english')
