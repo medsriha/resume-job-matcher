@@ -312,7 +312,6 @@ class Profile(object):
 
 
 if __name__ == "__main__":
-    OPENAI_API_KEY = "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"
     from transformers import pipeline
     from utils import TextExtractor, checkpoint
     from tqdm import tqdm
